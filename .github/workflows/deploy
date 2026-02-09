@@ -1,44 +1,29 @@
-name: Schedemy CI/CD
+#!/bin/bash
 
-on:
-  push:
-    branches: [ main ]
+# --- Config ---
+# We keep these exactly as you had them on your original server
+DATE=$(date +%F-%H-%M)
+BUCKET="htu-schedemy-backup-bucket"
+APP_DIR="/opt/edusched"
+LOG_FILE="$APP_DIR/app.log"
+BACKUP_LOG="$APP_DIR/backup.log"
 
-jobs:
-  deploy:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      
-      - name: Set up JDK 17
-        uses: actions/setup-java@v4
-        with:
-          java-version: '17'
-          distribution: 'temurin'
-          cache: maven
+# --- Logic ---
+echo "--- Backup Started: $(date) ---" >> "$BACKUP_LOG"
 
-      - name: Build with Maven
-        run: mvn clean package -DskipTests
+# 1. Check if the file actually exists before trying to upload
+if [ -f "$LOG_FILE" ]; then
 
-      - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: eu-north-1
+    # 2. Upload with a Success/Failure check
+    # The --quiet flag keeps the logs clean
+    aws s3 cp "$LOG_FILE" "s3://$BUCKET/logs/app-$DATE.log" --quiet
 
-      # THIS REPLACES SCP: It uploads the file to S3 instead of the server
-      - name: Upload to S3
-        run: |
-          aws deploy push \
-            --application-name SchedemyBackend \
-            --s3-location s3://schedemy-deployments/schedemy-revision.zip \
-            --source .
+    if [ $? -eq 0 ]; then
+        echo "SUCCESS: $LOG_FILE uploaded to S3." >> "$BACKUP_LOG"
+    else
+        echo "ERROR: S3 upload failed! Check IAM role permissions." >> "$BACKUP_LOG"
+    fi
 
-      # THIS TRIGGERS THE DEPLOYMENT: CodeDeploy tells the servers to pull from S3
-      - name: Create CodeDeploy Deployment
-        run: |
-          aws deploy create-deployment \
-            --application-name SchedemyBackend \
-            --deployment-group-name SchedemyBlueGreenGroup \
-            --s3-location bucket=schedemy-deployments,key=schedemy-revision.zip,bundleType=zip
+else
+    echo "ERROR: $LOG_FILE not found. Nothing to upload." >> "$BACKUP_LOG"
+fi
