@@ -26,14 +26,14 @@ jobs:
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: eu-north-1 # Stockholm
+          aws-region: eu-north-1 
 
       # This command zips the JAR, appspec.yml, and scripts, then sends to S3
       - name: Upload Artifact to S3
         run: |
           aws deploy push \
             --application-name SchedemyBackend \
-            --s3-location s3://your-bucket-name/schedemy-revision.zip \
+            --s3-location s3://schedemy-deployments/schedemy-revision.zip \
             --source .
 
       # This is the "Spark" that triggers the Blue/Green shift
@@ -43,4 +43,4 @@ jobs:
             --application-name SchedemyBackend \
             --deployment-config-name CodeDeployDefault.AllAtOnce \
             --deployment-group-name SchedemyBlueGreenGroup \
-            --s3-location bucket=your-bucket-name,key=schedemy-revision.zip,bundleType=zip
+            --s3-location bucket=schedemy-deployments,key=schedemy-revision.zip,bundleType=zip
