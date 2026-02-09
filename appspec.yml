@@ -3,6 +3,7 @@ os: linux
 files:
   - source: target/EduSched-0.0.1-SNAPSHOT.jar
     destination: /opt/edusched/
+file_exists_behavior: OVERWRITE    
 hooks:
   ApplicationStop:
     - location: scripts/stop_server.sh
