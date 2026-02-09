@@ -1,0 +1,29 @@
+#!/bin/bash
+
+# --- Config ---
+# We keep these exactly as you had them on your original server
+DATE=$(date +%F-%H-%M)
+BUCKET="htu-schedemy-backup-bucket"
+APP_DIR="/opt/edusched"
+LOG_FILE="$APP_DIR/app.log"
+BACKUP_LOG="$APP_DIR/backup.log"
+
+# --- Logic ---
+echo "--- Backup Started: $(date) ---" >> "$BACKUP_LOG"
+
+# 1. Check if the file actually exists before trying to upload
+if [ -f "$LOG_FILE" ]; then
+
+    # 2. Upload with a Success/Failure check
+    # The --quiet flag keeps the logs clean
+    aws s3 cp "$LOG_FILE" "s3://$BUCKET/logs/app-$DATE.log" --quiet
+
+    if [ $? -eq 0 ]; then
+        echo "SUCCESS: $LOG_FILE uploaded to S3." >> "$BACKUP_LOG"
+    else
+        echo "ERROR: S3 upload failed! Check IAM role permissions." >> "$BACKUP_LOG"
+    fi
+
+else
+    echo "ERROR: $LOG_FILE not found. Nothing to upload." >> "$BACKUP_LOG"
+fi
