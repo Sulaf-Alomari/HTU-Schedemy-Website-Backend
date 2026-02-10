@@ -27,7 +27,6 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: eu-north-1
 
-      # THIS REPLACES SCP: It uploads the file to S3 instead of the server
       - name: Upload to S3
         run: |
           aws deploy push \
@@ -35,7 +34,6 @@ jobs:
             --s3-location s3://schedemy-deployments/schedemy-revision.zip \
             --source .
 
-      # THIS TRIGGERS THE DEPLOYMENT: CodeDeploy tells the servers to pull from S3
       - name: Create CodeDeploy Deployment
         run: |
           aws deploy create-deployment \
