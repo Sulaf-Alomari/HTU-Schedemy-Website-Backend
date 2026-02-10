@@ -40,5 +40,5 @@ jobs:
         run: |
           aws deploy create-deployment \
             --application-name SchedemyBackend \
-            --deployment-group-name SchedemyBlueGreenGroup \
+            --deployment-group-name SchedemyDeploymentGroup \
             --s3-location bucket=schedemy-deployments,key=schedemy-revision.zip,bundleType=zip
